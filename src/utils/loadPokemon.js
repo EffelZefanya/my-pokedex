@@ -1,25 +1,23 @@
-import { fetchPokemonDetails, fetchPokemonList } from "../services/pokeapi";
+// utils/loadPokemon.js
+import { fetchPokemonList, fetchPokemonDetails } from "../services/pokeapi";
 
-const LIMIT = 10;
+export const POKEMON_LIMIT = 10;
 
-export const loadPokemon = async ({ offset, total, setTotal }) => {
-    const remaining = total - offset;
-    const actualLimit = remaining < LIMIT ? remaining : LIMIT;
+export async function loadPokemon({ offset, total, setTotal }) {
+  const data = await fetchPokemonList(POKEMON_LIMIT, offset);
+  
+  // Set total count only once
+  if (total === 0) setTotal(data.count);
 
-    const data = await fetchPokemonList(actualLimit, offset);
-    if (total === 0) setTotal(data.count);
+  const detailedPokemon = await Promise.all(
+    data.results.map(async (pokemon) => {
+      const details = await fetchPokemonDetails(pokemon.url);
+      return {
+        name: details.name,
+        image: details.sprites.front_default,
+      };
+    })
+  );
 
-    const detailedPokemon = await Promise.all(
-        data.results.map(async (pokemon) => {
-            const details = await fetchPokemonDetails(pokemon.url);
-            return {
-                name: details.name,
-                image: details.sprites.front_default,
-            };
-        })
-    );
-
-    return detailedPokemon;
-};
-
-export const POKEMON_LIMIT = LIMIT
+  return detailedPokemon;
+}
