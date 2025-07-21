@@ -1,27 +1,24 @@
 import { useEffect, useState } from "react";
 import PokemonCard from "./components/PokemonCard";
+import { fetchPokemonDetails, fetchPokemonList } from "./services/pokeapi";
 
 function App() {
 const [pokemonList, setPokemonList] = useState([])
 const [offset, setOffset] = useState(0)
 const [total, setTotal] = useState(0)
-const limit = 10
   
 useEffect(() => {
-  async function fetchPokemon() {
+  async function fetchData() {
     try {
-      const remaining = total-offset
+      const remaining = total - offset
       const actualLimit = remaining < 10 ? remaining : 10
       
-      const res = await fetch(`https://pokeapi.co/api/v2/pokemon?limit=${actualLimit}&offset=${offset}`)
-      const data = await res.json()
-
-      setTotal(data.count)
+      const data = await fetchPokemonList(actualLimit, offset)
+      if (total === 0) setTotal(data.count)
 
       const detailedPokemon = await Promise.all(
         data.results.map(async (pokemon) => {
-          const res = await fetch(pokemon.url)
-          const details = await res.json()
+          const details = await fetchPokemonDetails(pokemon.url)
 
           return {
             name: details.name,
@@ -36,7 +33,7 @@ useEffect(() => {
     }
   }
 
-  fetchPokemon()
+  fetchData()
 }, [offset])
 
   return (
